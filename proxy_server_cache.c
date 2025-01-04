@@ -18,6 +18,7 @@
 
 int PORT = 8080;
 const int MAX_CLIENTS = 15;
+const int MAX_BYTES = 8192;
 
 typedef struct cache_element
 {
@@ -40,6 +41,62 @@ pthread_mutex_t lock;
 cache_element *head = NULL;
 int cache_size;
 
+void *thread_fn(void *socketNew)
+{
+  sem_wait(&semaphore);
+  int semaphore_value;
+  sem_getvalue(&semaphore, semaphore_value);
+  printf("Value of Semaphore:- %d\n", semaphore_value);
+  int *t = (int *)socketNew;
+  int socket = *t;
+  int bytes_send_client, len;
+
+  char *buffer = (char *)calloc(MAX_BYTES, sizeof(char));
+  bytes_send_client = recv(socket, buffer, MAX_BYTES, 0);
+
+  while (bytes_send_client > 0)
+  {
+    len = strlen(buffer);
+    if (strstr(buffer, "\r\n\r\n") == NULL)
+    {
+      bytes_send_client = recv(socket, buffer + len, MAX_BYTES - len, 0);
+    }
+    else
+    {
+      break;
+    }
+
+    char *tempReq = (char *)calloc(strlen(buffer) + 1, sizeof(char));
+    for (size_t i = 0; i < strlen(buffer); i++)
+    {
+      tempReq[i] = buffer[i];
+    }
+    cache_element *temp = find(tempReq);
+    if (temp != NULL)
+    {
+      int size = temp->len / sizeof(char);
+      int pos = 0;
+      char response[MAX_BYTES];
+      while (pos < size)
+      {
+        bzero(response, MAX_BYTES);
+        for (size_t i = 0; i < MAX_BYTES; i++)
+        {
+          response[i] = temp->data[i];
+          pos++;
+        }
+        send(socket, response, MAX_BYTES, 0);
+        printf("Data retreived from the cache\n");
+        printf("%s\n\n", response);
+      }
+    } else if(bytes_send_client > 0){
+      len = strlen(buffer);
+      struct ParsedRequest *request = ParsedRequest_create();
+      if(ParsedRequest_parse(request, buffer, len))
+    }
+  }
+}
+
 int main(int argc, char const *argv[])
 {
   int client_socketId, client_len;
@@ -47,7 +104,7 @@ int main(int argc, char const *argv[])
   sem_init(&semaphore, 0, MAX_CLIENTS);
   pthread_mutex_init(&semaphore, NULL);
 
-  if (argv == 2)
+  if (argc == 2)
   {
     PORT = atoi(argv[1]);
   }
@@ -104,6 +161,10 @@ int main(int argc, char const *argv[])
     char str[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &ip_addr, str, INET_ADDRSTRLEN);
     printf("Client Successfully connected with port number %d and ip address %s\n", ntohs(client_addr.sin_port), str);
+
+    pthread_create(&tid[socketId_count], NULL, thread_fn, (void *)&Connected_socketId[client_socketId]);
+    socketId_count++;
   }
+  close(proxy_socketId);
   return 0;
 }
