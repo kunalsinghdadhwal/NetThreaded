@@ -464,7 +464,25 @@ void remove_cache_element()
         {
             if ((q->next)->lru_time_track < (tmp->lru_time_track))
             {
+                tmp = q->next;
+                p = q;
             }
         }
+        if (tmp == head)
+        {
+            head = head->next;
+        }
+        else
+        {
+            p->next = tmp->next;
+        }
+
+        cache_size = cache_size - (tmp->len) - sizeof(cache_element) - stelen(tmp->url) - 1;
+        free(tmp->data);
+        free(tmp->url);
+        free(tmp);
     }
+    tmp_lock_val = pthread_mutex_unlock(&lock);
+    printf("Remove Element Lock removed\n");
+    return;
 }
