@@ -17,7 +17,7 @@
 #include <errno.h>
 
 int PORT = 8080;
-const int MAX_CLIENTS = 15;
+#define MAX_CLIENTS 15
 const int MAX_BYTES = 8192;
 const int MAX_ELEMENT_SIZE = 10 * (1 << 10);
 const int MAX_SIZE = 200 * (1 << 20);
@@ -55,37 +55,37 @@ int sendErrorMessage(int socket, int status_code)
     switch (status_code)
     {
     case 400:
-        snprintf(str, sizeof(str), "HTTP/1.1 400 Bad Request\r\nContent-Length: 95\r\nConnection: keep-alive\r\nContent-Type: text/html\r\nDate: %s\r\nServer: VaibhavN/14785\r\n\r\n<HTML><HEAD><TITLE>400 Bad Request</TITLE></HEAD>\n<BODY><H1>400 Bad Rqeuest</H1>\n</BODY></HTML>", currentTime);
+        snprintf(str, sizeof(str), "HTTP/1.1 400 Bad Request\r\nContent-Length: 95\r\nConnection: keep-alive\r\nContent-Type: text/html\r\nDate: %s\r\nServer: VaibhavN/14785\r\n\r\n<HTML><HEAD><TITLE>400 Bad Request</TITLE></HEAD>\n<BODY><H1>400 Bad Rqeuest</H1>\n</BODY></HTML>", current_time);
         printf("400 Bad Request\n");
         send(socket, str, strlen(str), 0);
         break;
 
     case 403:
-        snprintf(str, sizeof(str), "HTTP/1.1 403 Forbidden\r\nContent-Length: 112\r\nContent-Type: text/html\r\nConnection: keep-alive\r\nDate: %s\r\nServer: VaibhavN/14785\r\n\r\n<HTML><HEAD><TITLE>403 Forbidden</TITLE></HEAD>\n<BODY><H1>403 Forbidden</H1><br>Permission Denied\n</BODY></HTML>", currentTime);
+        snprintf(str, sizeof(str), "HTTP/1.1 403 Forbidden\r\nContent-Length: 112\r\nContent-Type: text/html\r\nConnection: keep-alive\r\nDate: %s\r\nServer: VaibhavN/14785\r\n\r\n<HTML><HEAD><TITLE>403 Forbidden</TITLE></HEAD>\n<BODY><H1>403 Forbidden</H1><br>Permission Denied\n</BODY></HTML>", current_time);
         printf("403 Forbidden\n");
         send(socket, str, strlen(str), 0);
         break;
 
     case 404:
-        snprintf(str, sizeof(str), "HTTP/1.1 404 Not Found\r\nContent-Length: 91\r\nContent-Type: text/html\r\nConnection: keep-alive\r\nDate: %s\r\nServer: VaibhavN/14785\r\n\r\n<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>\n<BODY><H1>404 Not Found</H1>\n</BODY></HTML>", currentTime);
+        snprintf(str, sizeof(str), "HTTP/1.1 404 Not Found\r\nContent-Length: 91\r\nContent-Type: text/html\r\nConnection: keep-alive\r\nDate: %s\r\nServer: VaibhavN/14785\r\n\r\n<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>\n<BODY><H1>404 Not Found</H1>\n</BODY></HTML>", current_time);
         printf("404 Not Found\n");
         send(socket, str, strlen(str), 0);
         break;
 
     case 500:
-        snprintf(str, sizeof(str), "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 115\r\nConnection: keep-alive\r\nContent-Type: text/html\r\nDate: %s\r\nServer: VaibhavN/14785\r\n\r\n<HTML><HEAD><TITLE>500 Internal Server Error</TITLE></HEAD>\n<BODY><H1>500 Internal Server Error</H1>\n</BODY></HTML>", currentTime);
+        snprintf(str, sizeof(str), "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 115\r\nConnection: keep-alive\r\nContent-Type: text/html\r\nDate: %s\r\nServer: VaibhavN/14785\r\n\r\n<HTML><HEAD><TITLE>500 Internal Server Error</TITLE></HEAD>\n<BODY><H1>500 Internal Server Error</H1>\n</BODY></HTML>", current_time);
         // printf("500 Internal Server Error\n");
         send(socket, str, strlen(str), 0);
         break;
 
     case 501:
-        snprintf(str, sizeof(str), "HTTP/1.1 501 Not Implemented\r\nContent-Length: 103\r\nConnection: keep-alive\r\nContent-Type: text/html\r\nDate: %s\r\nServer: VaibhavN/14785\r\n\r\n<HTML><HEAD><TITLE>404 Not Implemented</TITLE></HEAD>\n<BODY><H1>501 Not Implemented</H1>\n</BODY></HTML>", currentTime);
+        snprintf(str, sizeof(str), "HTTP/1.1 501 Not Implemented\r\nContent-Length: 103\r\nConnection: keep-alive\r\nContent-Type: text/html\r\nDate: %s\r\nServer: VaibhavN/14785\r\n\r\n<HTML><HEAD><TITLE>404 Not Implemented</TITLE></HEAD>\n<BODY><H1>501 Not Implemented</H1>\n</BODY></HTML>", current_time);
         printf("501 Not Implemented\n");
         send(socket, str, strlen(str), 0);
         break;
 
     case 505:
-        snprintf(str, sizeof(str), "HTTP/1.1 505 HTTP Version Not Supported\r\nContent-Length: 125\r\nConnection: keep-alive\r\nContent-Type: text/html\r\nDate: %s\r\nServer: VaibhavN/14785\r\n\r\n<HTML><HEAD><TITLE>505 HTTP Version Not Supported</TITLE></HEAD>\n<BODY><H1>505 HTTP Version Not Supported</H1>\n</BODY></HTML>", currentTime);
+        snprintf(str, sizeof(str), "HTTP/1.1 505 HTTP Version Not Supported\r\nContent-Length: 125\r\nConnection: keep-alive\r\nContent-Type: text/html\r\nDate: %s\r\nServer: VaibhavN/14785\r\n\r\n<HTML><HEAD><TITLE>505 HTTP Version Not Supported</TITLE></HEAD>\n<BODY><H1>505 HTTP Version Not Supported</H1>\n</BODY></HTML>", current_time);
         printf("505 HTTP Version Not Supported\n");
         send(socket, str, strlen(str), 0);
         break;
@@ -226,6 +226,7 @@ void *thread_fn(void *socketNew)
     int bytes_send_client, len;
 
     char *buffer = (char *)calloc(MAX_BYTES, sizeof(char));
+    bzero(buffer, MAX_BYTES);
     bytes_send_client = recv(socket, buffer, MAX_BYTES, 0);
 
     while (bytes_send_client > 0)
@@ -245,7 +246,7 @@ void *thread_fn(void *socketNew)
     {
         tempReq[i] = buffer[i];
     }
-    cache_element *temp = find(tempReq);
+    cache_element *temp = find_cache_element(tempReq);
     if (temp != NULL)
     {
         int size = temp->len / sizeof(char);
@@ -274,6 +275,7 @@ void *thread_fn(void *socketNew)
         }
         else
         {
+            bzero(buffer, MAX_BYTES);
             if (!strcmp(request->method, "GET"))
             {
                 if (request->host && request->path && checkHTTPversion(request->version) == 1)
@@ -286,7 +288,7 @@ void *thread_fn(void *socketNew)
                 }
                 else
                 {
-                    sendErroMessage(socket, 500);
+                    sendErrorMessage(socket, 500);
                 }
             }
             else
@@ -302,7 +304,8 @@ void *thread_fn(void *socketNew)
     }
     else
     {
-        printf("Error in recieving from Client\n");
+        printf("Error in receiving from Client\n");
+        perror("recv");
     }
     shutdown(socket, SHUT_RDWR);
     close(socket);
@@ -320,7 +323,7 @@ int main(int argc, char const *argv[])
     int client_socketId, client_len;
     struct sockaddr_in server_addr, client_addr;
     sem_init(&semaphore, 0, MAX_CLIENTS);
-    pthread_mutex_init(&semaphore, NULL);
+    pthread_mutex_init(&lock, NULL);
 
     if (argc == 2)
     {
@@ -335,7 +338,7 @@ int main(int argc, char const *argv[])
         exit(1);
     }
     int reuse = 1;
-    if (setsockopt(proxy_socketId, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse, sizeof(reuse) < 0))
+    if (setsockopt(proxy_socketId, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse, sizeof(reuse)) < 0)
     {
         perror("setSockOpt FAILED!!");
     }
@@ -387,7 +390,7 @@ int main(int argc, char const *argv[])
     return 0;
 }
 
-cache_element *find(char *url)
+cache_element *find_cache_element(char *url)
 {
     cache_element *site = NULL;
     int tmp_lock_val = pthread_mutex_lock(&lock);
@@ -477,7 +480,7 @@ void remove_cache_element()
             p->next = tmp->next;
         }
 
-        cache_size = cache_size - (tmp->len) - sizeof(cache_element) - stelen(tmp->url) - 1;
+        cache_size = cache_size - (tmp->len) - sizeof(cache_element) - strlen(tmp->url) - 1;
         free(tmp->data);
         free(tmp->url);
         free(tmp);
