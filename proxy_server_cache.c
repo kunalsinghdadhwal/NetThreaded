@@ -17,10 +17,10 @@
 #include <errno.h>
 
 int PORT = 8080;
-#define MAX_CLIENTS 15
-const int MAX_BYTES = 8192;
-const int MAX_ELEMENT_SIZE = 10 * (1 << 10);
-const int MAX_SIZE = 200 * (1 << 20);
+#define MAX_CLIENTS 400 
+#define MAX_BYTES  4096
+#define MAX_ELEMENT_SIZE  10 * (1 << 10)
+#define MAX_SIZE  200 * (1 << 20)
 
 typedef struct cache_element
 {
@@ -136,9 +136,9 @@ int connnectRemoteServer(char *host_addr, int port_num)
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port_num);
 
-    bcopy((char *)host->h_addr_list[0], (char *)&server_addr.sin_addr.s_addr, host->h_length);
+    bcopy((char *)host->h_addr, (char *)&server_addr.sin_addr.s_addr, host->h_length);
 
-    if (connect(remoteSocket, (struct sockaddr *)&server_addr, (size_t)sizeof(server_addr)) < 0)
+    if (connect(remoteSocket, (struct sockaddr *)&server_addr, (socklen_t)sizeof(server_addr)) < 0)
     {
         fprintf(stderr, "Error in Connecting\n");
         return -1;
@@ -146,7 +146,7 @@ int connnectRemoteServer(char *host_addr, int port_num)
     return remoteSocket;
 }
 
-int handle_request(int clientSocketId, struct ParsedRequest *request, char *tempReq)
+int handle_request(int clientSocketId, ParsedRequest *request, char *tempReq)
 {
     char *buffer = (char *)calloc(MAX_BYTES, sizeof(char));
     strcpy(buffer, "GET ");
@@ -184,6 +184,7 @@ int handle_request(int clientSocketId, struct ParsedRequest *request, char *temp
         return -1;
     }
     int bytes_send = send(remoteSocketId, buffer, strlen(buffer), 0);
+    bzero(buffer, MAX_BYTES);
     bytes_send = recv(remoteSocketId, buffer, MAX_BYTES - 1, 0);
     char *temp_buffer = (char *)calloc(MAX_BYTES, sizeof(char));
     int temp_buffer_size = MAX_BYTES;
@@ -192,7 +193,7 @@ int handle_request(int clientSocketId, struct ParsedRequest *request, char *temp
     while (bytes_send > 0)
     {
         bytes_send = send(clientSocketId, buffer, bytes_send, 0);
-        for (int i = 0; i < bytes_send / sizeof(char); i++)
+        for (size_t i = 0; i < bytes_send / sizeof(char); i++)
         {
             temp_buffer[temp_buffer_index] = buffer[i];
             temp_buffer_index++;
@@ -210,6 +211,7 @@ int handle_request(int clientSocketId, struct ParsedRequest *request, char *temp
     temp_buffer[temp_buffer_index] = '\0';
     free(buffer);
     add_cache_element(temp_buffer, strlen(temp_buffer), tempReq);
+    printf("Done handling Request and added to cache\n");
     free(temp_buffer);
     close(remoteSocketId);
     return 0;
@@ -268,7 +270,7 @@ void *thread_fn(void *socketNew)
     else if (bytes_send_client > 0)
     {
         len = strlen(buffer);
-        struct ParsedRequest *request = ParsedRequest_create();
+        ParsedRequest *request = ParsedRequest_create();
         if (ParsedRequest_parse(request, buffer, len) < 0)
         {
             perror("Parsing Failed\n");
@@ -278,7 +280,7 @@ void *thread_fn(void *socketNew)
             bzero(buffer, MAX_BYTES);
             if (!strcmp(request->method, "GET"))
             {
-                if (request->host && request->path && checkHTTPversion(request->version) == 1)
+                if (request->host && request->path && (checkHTTPversion(request->version)) == 1)
                 {
                     bytes_send_client = handle_request(socket, request, tempReq);
                     if (bytes_send_client < 0)
