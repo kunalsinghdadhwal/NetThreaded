@@ -1,20 +1,20 @@
-#include "proxy_parse.h";
-#include <stdio.h>;
-#include <stdlib.h>;
-#include <string.h>;
-#include <strings.h>;
-#include <time.h>;
-#include <pthread.h>;
-#include <semaphore.h>;
-#include <sys/types.h>;
-#include <sys/socket.h>;
-#include <sys/wait.h>;
-#include <netinet/in.h>;
-#include <arpa/inet.h>;
-#include <netdb.h>;
-#include <unistd.h>;
-#include <fcntl.h>;
-#include <errno.h>;
+#include "proxy_parse.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
+#include <time.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
 
 int PORT = 8080;
 const int MAX_CLIENTS = 15;
@@ -26,7 +26,7 @@ typedef struct cache_element
   int len;
   char *url;
   time_t lru_time_track;
-  cache_element *next;
+  struct cache_element *next;
 } cache_element;
 
 cache_element *find_cache_element(char *url);
@@ -45,7 +45,7 @@ void *thread_fn(void *socketNew)
 {
   sem_wait(&semaphore);
   int semaphore_value;
-  sem_getvalue(&semaphore, semaphore_value);
+  sem_getvalue(&semaphore, &semaphore_value);
   printf("Value of Semaphore:- %d\n", semaphore_value);
   int *t = (int *)socketNew;
   int socket = *t;
