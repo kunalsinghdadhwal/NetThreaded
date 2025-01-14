@@ -17,10 +17,10 @@
 #include <errno.h>
 
 int PORT = 8080;
-#define MAX_CLIENTS 400 
-#define MAX_BYTES  4096
-#define MAX_ELEMENT_SIZE  10 * (1 << 10)
-#define MAX_SIZE  200 * (1 << 20)
+#define MAX_CLIENTS 400
+#define MAX_BYTES 4096
+#define MAX_ELEMENT_SIZE 10 * (1 << 10)
+#define MAX_SIZE 200 * (1 << 20)
 
 typedef struct cache_element
 {
@@ -74,7 +74,6 @@ int sendErrorMessage(int socket, int status_code)
 
     case 500:
         snprintf(str, sizeof(str), "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 115\r\nConnection: keep-alive\r\nContent-Type: text/html\r\nDate: %s\r\nServer: VaibhavN/14785\r\n\r\n<HTML><HEAD><TITLE>500 Internal Server Error</TITLE></HEAD>\n<BODY><H1>500 Internal Server Error</H1>\n</BODY></HTML>", current_time);
-        // printf("500 Internal Server Error\n");
         send(socket, str, strlen(str), 0);
         break;
 
@@ -136,7 +135,7 @@ int connnectRemoteServer(char *host_addr, int port_num)
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port_num);
 
-    bcopy((char *)host->h_addr, (char *)&server_addr.sin_addr.s_addr, host->h_length);
+    bcopy((char *)host->h_addr_list[0], (char *)&server_addr.sin_addr.s_addr, host->h_length);
 
     if (connect(remoteSocket, (struct sockaddr *)&server_addr, (socklen_t)sizeof(server_addr)) < 0)
     {
@@ -146,9 +145,9 @@ int connnectRemoteServer(char *host_addr, int port_num)
     return remoteSocket;
 }
 
-int handle_request(int clientSocketId, ParsedRequest *request, char *tempReq)
+int handle_request(int clientSocketId, struct ParsedRequest *request, char *tempReq)
 {
-    char *buffer = (char *)calloc(MAX_BYTES, sizeof(char));
+    char *buffer = (char *)malloc(sizeof(char) * MAX_BYTES);
     strcpy(buffer, "GET ");
     strcpy(buffer, request->path);
     strcat(buffer, " ");
@@ -186,18 +185,21 @@ int handle_request(int clientSocketId, ParsedRequest *request, char *tempReq)
     int bytes_send = send(remoteSocketId, buffer, strlen(buffer), 0);
     bzero(buffer, MAX_BYTES);
     bytes_send = recv(remoteSocketId, buffer, MAX_BYTES - 1, 0);
-    char *temp_buffer = (char *)calloc(MAX_BYTES, sizeof(char));
+    char *temp_buffer = (char *)malloc(sizeof(char) * MAX_BYTES);
     int temp_buffer_size = MAX_BYTES;
     int temp_buffer_index = 0;
 
     while (bytes_send > 0)
     {
         bytes_send = send(clientSocketId, buffer, bytes_send, 0);
+        printf("***\n");
         for (size_t i = 0; i < bytes_send / sizeof(char); i++)
         {
             temp_buffer[temp_buffer_index] = buffer[i];
+            printf("%c", buffer[i]);
             temp_buffer_index++;
         }
+        printf("***\n");
         temp_buffer_size += MAX_BYTES;
         temp_buffer = (char *)realloc(temp_buffer, temp_buffer_size);
         if (bytes_send < 0)
@@ -211,7 +213,6 @@ int handle_request(int clientSocketId, ParsedRequest *request, char *tempReq)
     temp_buffer[temp_buffer_index] = '\0';
     free(buffer);
     add_cache_element(temp_buffer, strlen(temp_buffer), tempReq);
-    printf("Done handling Request and added to cache\n");
     free(temp_buffer);
     close(remoteSocketId);
     return 0;
@@ -243,7 +244,7 @@ void *thread_fn(void *socketNew)
             break;
         }
     }
-    char *tempReq = (char *)calloc(strlen(buffer) + 1, sizeof(char));
+    char *tempReq = (char *)malloc(strlen(buffer) * sizeof(char) + 1);
     for (size_t i = 0; i < strlen(buffer); i++)
     {
         tempReq[i] = buffer[i];
@@ -263,14 +264,14 @@ void *thread_fn(void *socketNew)
                 pos++;
             }
             send(socket, response, MAX_BYTES, 0);
-            printf("Data retreived from the cache\n");
-            printf("%s\n\n", response);
         }
+        printf("Data retreived from the cache\n");
+        printf("%s\n\n", response);
     }
     else if (bytes_send_client > 0)
     {
         len = strlen(buffer);
-        ParsedRequest *request = ParsedRequest_create();
+        struct ParsedRequest *request = ParsedRequest_create();
         if (ParsedRequest_parse(request, buffer, len) < 0)
         {
             perror("Parsing Failed\n");
@@ -280,7 +281,7 @@ void *thread_fn(void *socketNew)
             bzero(buffer, MAX_BYTES);
             if (!strcmp(request->method, "GET"))
             {
-                if (request->host && request->path && (checkHTTPversion(request->version)) == 1)
+                if (request->host && request->path && checkHTTPversion(request->version) == 1)
                 {
                     bytes_send_client = handle_request(socket, request, tempReq);
                     if (bytes_send_client < 0)
@@ -300,14 +301,13 @@ void *thread_fn(void *socketNew)
         }
         ParsedRequest_destroy(request);
     }
+    else if (bytes_send_client < 0)
+    {
+        perror("Error in receiving from client.\n");
+    }
     else if (bytes_send_client == 0)
     {
-        printf("Client is disconnected\n");
-    }
-    else
-    {
-        printf("Error in receiving from Client\n");
-        perror("recv");
+        printf("Client disconnected!\n");
     }
     shutdown(socket, SHUT_RDWR);
     close(socket);
@@ -439,9 +439,10 @@ int add_cache_element(char *data, int size, char *url)
         {
             remove_cache_element();
         }
-        cache_element *element = (cache_element *)calloc(1, sizeof(cache_element));
+        cache_element *element = (cache_element *)malloc(sizeof(cache_element));
+        element->data = (char *)malloc(size + 1);
         strcpy(element->data, data);
-        element->url = (char *)calloc(strlen(url) + 1, sizeof(char));
+        element->url = (char *)malloc(1 + (strlen(url) * sizeof(char)));
         strcpy(element->url, url);
         element->lru_time_track = time(NULL);
         element->next = head;

@@ -1,7 +1,7 @@
 CC=g++
 CFLAGS= -g -Wall
 
-all:proxy
+all: clean proxy
 
 proxy: proxy_server_cache.c
 		$(CC) $(CFLAGS) -o proxy_parse.o -c proxy_parse.c -lpthread
