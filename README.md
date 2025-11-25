@@ -14,7 +14,7 @@ A lightweight, multi-threaded HTTP proxy server implementation in C with built-i
 ## Requirements
 
 - GCC/G++ compiler
-- POSIX-compliant operating system (Linux/Unix)
+- Linux/Unix operating system (POSIX-compliant)
 - pthread library
 
 ## Building
@@ -50,7 +50,12 @@ http://localhost:8080/http://example.com
 
 ## Limitations
 
+- Linux/Unix only (uses POSIX APIs)
 - Only supports HTTP GET method
 - Does not support HTTPS/TLS connections
 - Maximum cache element size: 10 KB
 - Maximum total cache size: 200 MB
+
+## License
+
+This project is provided as-is for educational purposes.

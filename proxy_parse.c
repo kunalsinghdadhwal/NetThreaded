@@ -229,7 +229,7 @@ int ParsedHeader_parse(struct ParsedRequest *pr, char *line)
   char *index1;
   char *index2;
 
-  index1 = index(line, ':');
+  index1 = strchr(line, ':');
   if (index1 == NULL)
   {
     debug("No colon found\n");
